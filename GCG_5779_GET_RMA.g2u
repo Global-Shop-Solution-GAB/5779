@@ -1,0 +1,98 @@
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Author: Alejandro Anazco V.
+'11/27/2019
+'Programmed for Maccor
+'Purpose: Get new RMA Number
+'HOOK:
+'32130: RMA New Manual RMA - Populate
+'32131: RMA New Manual RMA - Script 1
+f.Intrinsic.Control.Try
+	Function.Intrinsic.UI.UsePixels ' Allows you to use Pixels instead of Twips throughout
+	
+	f.Intrinsic.Control.SelectCase(v.Caller.Hook)
+		f.Intrinsic.Control.Case(32130)
+			v.Passed.000049.Set("Next RMA")
+		f.Intrinsic.Control.Case(32131)
+			f.Intrinsic.Control.CallSub(getLastRMA)
+	f.Intrinsic.Control.EndSelect
+	
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+
+Program.Sub.Main.End
+
+Program.Sub.ErrorMsg.Start
+v.Local.sError.Declare
+
+'Closes ODBC connection, default to connection : "con"
+f.Intrinsic.Control.If(v.ODBC!con.State, =, 1)
+	f.ODBC.Connection!con.Close
+f.Intrinsic.Control.EndIf
+
+'Generic Error message.
+f.Intrinsic.String.Build("Project GCG_5779_GET_RMA.g2u {0}{0}Subroutine: {1}{0}Error: {2} with Description: {3}", v.Ambient.NewLine, v.Args.CurrentSub, v.Ambient.ErrorNumber, v.Ambient.ErrorDescription, v.Local.sError)
+f.Intrinsic.UI.Msgbox(v.Local.sError)
+Program.Sub.ErrorMsg.End
+
+Program.Sub.getLastRMA.Start
+v.Local.sSQLValue.Declare(String, "")
+
+v.Local.sInvoiceValue.Declare(String, "")
+v.Local.sSequenceValue.Declare(String, "")
+v.Local.sOrderno.Declare(String, "")
+
+v.Local.iNumValue.Declare(Long, 0)
+f.Intrinsic.Control.Try
+'Try something
+	'v.Local.sScreenValue.Set(v.Passed.000003)
+'	f.ODBC.Connection!con.OpenCompanyConnection
+'	 	f.ODBC.Connection!con.ExecuteAndReturn("Select top 1 RMA_ID from RMA_Header", v.Local.sSQLValue)
+'	 	'f.ODBC.Connection!con.ExecuteAndReturn("Select top 1 Order_No from Order_Header order by order_no desc", v.Local.sSQLValue)
+'	f.ODBC.Connection!con.Close
+	
+	'Read Option for Last for Invoice Number.
+	
+	f.Global.General.ReadOption("402499", 3, "0", v.Local.sSQLValue)
+
+	f.Intrinsic.Control.If(v.Local.sSQLValue.Trim, =, "")
+		v.Local.sSQLValue.Set("0")
+	f.Intrinsic.Control.EndIf
+	'Add 1 to the last Invoice number
+	f.Intrinsic.Control.If(v.Local.sSQLValue.IsNumeric)
+		v.Local.iNumValue.Set(v.Local.sSQLValue)
+		f.Intrinsic.Math.Add(v.Local.iNumValue, 1, v.Local.iNumValue)
+		f.Global.General.SaveOption("402499", "0000", False, v.Local.iNumValue, "", "", v.Local.iNumValue, "", v.Local.iNumValue)
+		f.Intrinsic.String.LPad(v.Local.iNumValue, "0", 7, v.Local.sOrderno)
+	f.Intrinsic.Control.EndIf
+	
+	'Read Option for Last for Sales Order Number.
+	f.Global.General.ReadOption("401556", 3, "0", v.Local.sSQLValue)
+
+	f.Intrinsic.Control.If(v.Local.sSQLValue.Trim, =, "")
+		v.Local.sSQLValue.Set("0")
+	f.Intrinsic.Control.EndIf
+	'Add 1 to the last Sales Order number
+	f.Intrinsic.Control.If(v.Local.sSQLValue.IsNumeric)
+		v.Local.iNumValue.Set(v.Local.sSQLValue)
+		f.Intrinsic.Math.Add(v.Local.iNumValue, 1, v.Local.iNumValue)
+		f.Global.General.SaveOption("401556", "0000", False, v.Local.iNumValue, "", "", v.Local.iNumValue, "", v.Local.iNumValue)
+		f.Intrinsic.String.LPad(v.Local.iNumValue, "0", 6, v.Local.sInvoiceValue)
+	f.Intrinsic.Control.EndIf
+	
+	
+	v.Passed.000003.Set(v.Local.sOrderno.Trim)
+	v.Passed.000020.Set(v.Local.sInvoiceValue.Trim)
+	v.Passed.000001.Set("0000")
+f.Intrinsic.Control.Catch
+	f.Intrinsic.Control.CallSub(ErrorMsg, CurrentSub, v.Ambient.CurrentSubroutine)
+f.Intrinsic.Control.EndTry
+Program.Sub.getLastRMA.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$aanazco$}$20191205095727166$}$7aQAV3Tor/tR9bkuakHbuzQlHVuXCGOze7UnLcZwiq/N28HH0c2YELg7hl9Zfbd7Fo+gi8ExB1E=
+Program.Sub.Comments.End
